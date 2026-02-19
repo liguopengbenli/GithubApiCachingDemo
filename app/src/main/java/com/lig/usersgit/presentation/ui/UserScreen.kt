@@ -1,5 +1,6 @@
 package com.lig.usersgit.presentation.ui
 
+import android.R
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,8 +16,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -34,7 +38,10 @@ import coil.request.ImageRequest
 import com.lig.usersgit.domain.model.User
 import com.lig.usersgit.presentation.viewmodel.GitHubUsersViewModel
 import com.lig.usersgit.presentation.UiState
+import com.lig.usersgit.presentation.UserEvent
+import androidx.compose.runtime.collectAsState
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserScreen(
     modifier: Modifier = Modifier,
@@ -46,10 +53,19 @@ fun UserScreen(
       collectAsStateWithLifecycle(): Automatically stops collecting when the app goes into the background and re-starts when the app comes back to the foreground.
     * */
     val state by viewModel.users.collectAsStateWithLifecycle()
+    val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
+
 
     //using val uiState = state inside the when block is done to ensure atomicity and consistency.
     //normally it handle in delegate already
-    Box(modifier = modifier.fillMaxSize()) {
+    PullToRefreshBox(
+        modifier = Modifier.fillMaxSize(),
+        onRefresh = {
+            viewModel.onEvent(UserEvent.Refresh)
+        },
+        isRefreshing = isRefreshing,
+        state = rememberPullToRefreshState(),
+    ) {
         when (val uiState = state) {
             UiState.Loading -> CircularProgressIndicator(
                 modifier = Modifier.align(Alignment.Center)
@@ -72,9 +88,11 @@ fun UserScreen(
 
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserList(users: List<User>, onUserClick: (User) -> Unit) {
     //LazyColumn only "composes" and lays out the items currently visible on the screen
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -95,10 +113,11 @@ fun UserList(users: List<User>, onUserClick: (User) -> Unit) {
     }
 }
 
+
 @Composable
 fun UserItem(user: User, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Row(
-        modifier = modifier.clickable{
+        modifier = modifier.clickable {
             onClick()
         },
         verticalAlignment = Alignment.CenterVertically
@@ -118,8 +137,8 @@ fun UserItem(user: User, onClick: () -> Unit, modifier: Modifier = Modifier) {
                 .size(64.dp)
                 .clip(CircleShape),
             contentScale = ContentScale.Crop,
-            placeholder = painterResource(id = android.R.drawable.ic_menu_gallery),
-            error = painterResource(id = android.R.drawable.ic_menu_gallery)
+            placeholder = painterResource(id = R.drawable.ic_menu_gallery),
+            error = painterResource(id = R.drawable.ic_menu_gallery)
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(
