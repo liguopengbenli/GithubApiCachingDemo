@@ -1,11 +1,11 @@
-package com.lig.usersgit.presentation
+package com.lig.usersgit.presentation.viewmodel
 
-import android.R.attr.data
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lig.usersgit.domain.UserRepository
 import com.lig.usersgit.domain.model.User
+import com.lig.usersgit.presentation.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

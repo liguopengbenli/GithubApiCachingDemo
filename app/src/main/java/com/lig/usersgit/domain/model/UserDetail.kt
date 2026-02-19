@@ -1,12 +1,12 @@
 package com.lig.usersgit.domain.model
 
-import com.google.gson.annotations.SerializedName
-import java.sql.Timestamp
-
-data class User(
+data class UserDetail(
     val id: Int,
     val login: String,
     val avatarUrl: String,
+    val name: String?,
     val bio: String?,
-    val timestamp: Timestamp
+    val location: String?,
+    val followers: Int,
+    val following: Int,
 )

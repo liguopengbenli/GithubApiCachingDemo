@@ -1,7 +1,5 @@
 package com.lig.usersgit.presentation
 
-import com.lig.usersgit.domain.model.User
-
 // sealed class Exhaustive Compile-Time Checks
 // only use wrapper in presentation layer
 sealed class UiState<out T>{

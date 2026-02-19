@@ -1,6 +1,6 @@
 package com.lig.usersgit.di
 
-import com.lig.usersgit.data.remote.repo.UserRepositoryRemote
+import com.lig.usersgit.data.repo.UserRepositoryImpl
 import com.lig.usersgit.domain.UserRepository
 import dagger.Binds
 import dagger.Module
@@ -13,6 +13,5 @@ import javax.inject.Singleton
 abstract class RepositoryModule {
     @Binds
     @Singleton
-    abstract fun bindUserRepository(impl: UserRepositoryRemote): UserRepository
-
+    abstract fun bindUserRepository(impl: UserRepositoryImpl): UserRepository
 }

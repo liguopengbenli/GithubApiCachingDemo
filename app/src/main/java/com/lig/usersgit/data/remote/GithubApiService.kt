@@ -1,8 +1,9 @@
 package com.lig.usersgit.data.remote
 
-import com.lig.usersgit.data.UsersDto
+import com.lig.usersgit.data.remote.model.UserDto
+import com.lig.usersgit.domain.model.User
 import retrofit2.http.GET
-import retrofit2.http.Query
+import retrofit2.http.Path
 
 interface GithubApiService {
 //    @GET("search/users")
@@ -12,5 +13,9 @@ interface GithubApiService {
 
     // one shot operation not stream without flow
     @GET("users")
-    suspend fun getUsers(): List<UsersDto>
+    suspend fun getUsers(): List<UserDto>
+
+    @GET("users/{username}")
+    suspend fun getUserDetail(@Path("username") username: String): UserDto
 }
+
