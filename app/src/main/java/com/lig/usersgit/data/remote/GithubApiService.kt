@@ -1,7 +1,6 @@
 package com.lig.usersgit.data.remote
 
 import com.lig.usersgit.data.remote.model.UserDto
-import com.lig.usersgit.domain.model.User
 import retrofit2.http.GET
 import retrofit2.http.Path
 

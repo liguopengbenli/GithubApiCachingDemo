@@ -18,11 +18,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,10 +41,8 @@ import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.lig.usersgit.domain.model.User
+import com.lig.usersgit.presentation.state.UserEvent
 import com.lig.usersgit.presentation.viewmodel.GitHubUsersViewModel
-import com.lig.usersgit.presentation.UiState
-import com.lig.usersgit.presentation.UserEvent
-import androidx.compose.runtime.collectAsState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,40 +55,39 @@ fun UserScreen(
     * collectAsState(): Keeps the "pipe" open. If your Flow is fetching data from a database or a high-frequency sensor, it continues to work and drain battery while the user can't even see the UI.
       collectAsStateWithLifecycle(): Automatically stops collecting when the app goes into the background and re-starts when the app comes back to the foreground.
     * */
-    val state by viewModel.users.collectAsStateWithLifecycle()
-    val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
 
-
-    //using val uiState = state inside the when block is done to ensure atomicity and consistency.
-    //normally it handle in delegate already
-    PullToRefreshBox(
-        modifier = Modifier.fillMaxSize(),
-        onRefresh = {
-            viewModel.onEvent(UserEvent.Refresh)
-        },
-        isRefreshing = isRefreshing,
-        state = rememberPullToRefreshState(),
-    ) {
-        when (val uiState = state) {
-            UiState.Loading -> CircularProgressIndicator(
-                modifier = Modifier.align(Alignment.Center)
-            )
-
-            is UiState.Success -> {
-                UserList(uiState.data, onUserClick = onUserClick)
-            }
-
-            is UiState.Error -> {
-                val message = uiState.message
-                Text(
-                    text = message,
-                    modifier = Modifier.align(Alignment.Center),
-                    color = MaterialTheme.colorScheme.error
-                )
-            }
+    LaunchedEffect(state.error) {
+        state.error?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.onEvent(UserEvent.ClearError)
         }
     }
 
+    Scaffold(snackbarHost = { SnackbarHost(hostState = snackbarHostState) }) { innerPadding ->
+        PullToRefreshBox(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(innerPadding),
+            onRefresh = {
+                viewModel.onEvent(UserEvent.Refresh)
+            },
+            isRefreshing = state.isRefreshing,
+            state = rememberPullToRefreshState(),
+        ) {
+            when {
+                state.isLoading -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+
+                state.users.isNotEmpty() -> UserList(users = state.users, onUserClick = onUserClick)
+                state.error != null -> Text(text = state.error!!)
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -128,6 +130,7 @@ fun UserItem(user: User, onClick: () -> Unit, modifier: Modifier = Modifier) {
                 .data(user.avatarUrl)
                 .memoryCacheKey(user.avatarUrl)
                 .diskCacheKey(user.avatarUrl)
+                .networkCachePolicy(CachePolicy.ENABLED) // add this
                 .memoryCachePolicy(CachePolicy.ENABLED)
                 .diskCachePolicy(CachePolicy.ENABLED)
                 .crossfade(true)

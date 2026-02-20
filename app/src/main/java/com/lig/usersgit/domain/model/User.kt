@@ -1,6 +1,5 @@
 package com.lig.usersgit.domain.model
 
-import com.google.gson.annotations.SerializedName
 import java.sql.Timestamp
 
 data class User(

@@ -10,7 +10,6 @@ import com.lig.usersgit.domain.model.User
 import com.lig.usersgit.domain.model.UserDetail
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
@@ -23,16 +22,18 @@ class UserRepositoryImpl @Inject constructor(
     private val userDao: UserDao
 ) : UserRepository {
 
-    override fun getUsers(): Flow<Result<List<User>>> = flow {
+    override fun getUsers(forceRefresh: Boolean): Flow<Result<List<User>>> = flow {
         var cachedUsers = emptyList<User>()
         // cache first
-        userDao.getAllUsers().firstOrNull()?.let { cached ->
-            if (cached.isNotEmpty()){
-                cachedUsers = cached.map { it.toUser() }
-                emit (Result.success(cachedUsers))
+        if(!forceRefresh){
+            userDao.getAllUsers().firstOrNull()?.let { cached ->
+                if (cached.isNotEmpty()){
+                    cachedUsers = cached.map { it.toUser() }
+                    emit (Result.success(cachedUsers))
+                }
             }
         }
-        
+
         try {
             // fetch fresh data from server, always convert to entity first instead of domain (lost data)
             val usersEntity = apiService.getUsers().map { it.toUserEntity() }
@@ -40,10 +41,7 @@ class UserRepositoryImpl @Inject constructor(
             userDao.insertUsers(usersEntity)
             emit(Result.success(usersEntity.map { it.toUser() }))
         } catch (e: Exception) {
-            // If we have cached data, just log error or ignore it so UI keeps showing data
-            if (cachedUsers.isEmpty()) {
-                emit(Result.failure(e))
-            }
+            emit(Result.failure(e))
         }
     }.flowOn(Dispatchers.IO)
 
